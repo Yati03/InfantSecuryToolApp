@@ -1,98 +1,97 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import Aurora from '@/components/Aurora';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
+const AURORA_STOPS = ['#66ffc4', '#ffce1f', '#ff9029'];
+
+export default function InitialPage() {
+  const router = useRouter();
+  const borderWidth = useSharedValue(2);
+  const borderOpacity = useSharedValue(0.6);
+  const scale = useSharedValue(1);
+
+  const buttonStyle = useAnimatedStyle(() => ({
+    borderWidth: borderWidth.value,
+    borderColor: `rgba(255, 255, 255, ${borderOpacity.value})`,
+    transform: [{ scale: scale.value }],
+  }));
+
+  function handlePressIn() {
+    borderWidth.value = withSpring(7, { damping: 10, stiffness: 200 });
+    borderOpacity.value = withTiming(1, { duration: 150 });
+    scale.value = withSpring(0.97, { damping: 15 });
   }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
+
+  function handlePressOut() {
+    borderWidth.value = withSpring(2, { damping: 12, stiffness: 180 });
+    borderOpacity.value = withTiming(0.6, { duration: 200 });
+    scale.value = withSpring(1, { damping: 12 });
+    setTimeout(() => router.push('/connection'), 120);
   }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <View style={styles.container}>
+      <Aurora colorStops={AURORA_STOPS} blend={0.59} amplitude={1.0} speed={1.1} />
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+      <View style={styles.content}>
+        <Text style={styles.title}>Infant Security</Text>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        <Animated.View
+          style={[styles.button, buttonStyle]}
+          // @ts-ignore — web pressable via onPointerDown
+          onStartShouldSetResponder={() => true}
+          onResponderGrant={handlePressIn}
+          onResponderRelease={handlePressOut}
+          onResponderTerminate={handlePressOut}>
+          <Text style={styles.buttonText}>Connect to Device</Text>
+        </Animated.View>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    backgroundColor: '#050a10',
   },
-  safeArea: {
+  content: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    gap: 48,
+    paddingHorizontal: 32,
   },
   title: {
+    fontSize: 44,
+    fontWeight: '800',
+    color: '#ffffff',
     textAlign: 'center',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
-  code: {
-    textTransform: 'uppercase',
+  button: {
+    paddingVertical: 18,
+    paddingHorizontal: 48,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  buttonText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.3,
   },
 });
