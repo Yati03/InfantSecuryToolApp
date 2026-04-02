@@ -108,6 +108,10 @@ export function onDisconnect(cb: DisconnectCallback): () => void {
 }
 
 export async function connect(): Promise<void> {
+  // BLE is unavailable in browsers — return a promise that never resolves
+  // so the dot animation plays until the 60s timeout fires naturally.
+  if (Platform.OS === 'web') return new Promise(() => {});
+
   await waitForPoweredOn();
 
   const granted = await requestPermissions();
