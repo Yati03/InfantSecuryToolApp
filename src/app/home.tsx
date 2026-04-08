@@ -34,6 +34,10 @@ function activityColor(v: number): string {
   return v < 20 ? '#4ade80' : '#f87171';
 }
 
+function heartbeatColor(v: number): string {
+  return v >= 100 && v <= 160 ? '#4ade80' : '#f87171';
+}
+
 // ── Row component ─────────────────────────────────────────────────────────────
 
 function SensorRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -57,6 +61,8 @@ export default function HomePage() {
     smoke: null,
     humidity: null,
     activity: null,
+    heartbeat: null,
+    message: null,
   });
   const [connectionLost, setConnectionLost] = useState(false);
 
@@ -87,7 +93,7 @@ export default function HomePage() {
     return v !== null ? v.toFixed(decimals) : '—';
   }
 
-  const { babyTemp, roomTemp, brightness, bloodOxygen, smoke, humidity, activity } = data;
+  const { babyTemp, roomTemp, brightness, bloodOxygen, smoke, humidity, activity, heartbeat, message } = data;
 
   return (
     <View style={styles.container}>
@@ -186,7 +192,22 @@ export default function HomePage() {
               </Text>
             }
           />
+
+          <View style={styles.divider} />
+
+          <SensorRow
+            label="Heart Rate"
+            value={
+              <Text style={[styles.valueText, { color: heartbeat !== null ? heartbeatColor(heartbeat) : '#aaa' }]}>
+                {heartbeat !== null ? `${Math.round(heartbeat)} bpm` : '—'}
+              </Text>
+            }
+          />
         </View>
+
+        {message && (
+          <Text style={styles.deviceMessage}>{message}</Text>
+        )}
       </ScrollView>
     </View>
   );
@@ -273,5 +294,12 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.08)',
     marginHorizontal: 20,
+  },
+  deviceMessage: {
+    marginTop: 16,
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

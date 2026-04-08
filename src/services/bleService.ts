@@ -3,18 +3,20 @@ import { BleError, BleManager, Device, State, Subscription } from 'react-native-
 
 // ── Configure these to match your ESP32-S3 firmware ──────────────────────────
 const DEVICE_NAME = 'InfantMonitor';
-const SERVICE_UUID = '12345678-1234-1234-1234-123456789abc';
-const CHAR_UUID = '12345678-1234-1234-1234-123456789abd';
+const SERVICE_UUID = 'eafeeb4a-98e9-41ef-b304-1c493eab2e84';
+const CHAR_UUID = '10b80e40-fb4c-454a-ba7c-0cc397825fbb';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface SensorData {
-  babyTemp: number | null;    // l!float  °C
-  roomTemp: number | null;    // E!float  °C
+  babyTemp: number | null;    // I!float  °C  (internal)
+  roomTemp: number | null;    // E!float  °C  (external)
   brightness: number | null;  // B!int    (1=ON, 0=OFF)
-  bloodOxygen: number | null; // O!int    bpm
+  bloodOxygen: number | null; // O!int    %
   smoke: number | null;       // S!int    (1=detected, 0=clear)
   humidity: number | null;    // H!int    %
   activity: number | null;    // M!int    minutes without movement
+  heartbeat: number | null;   // C!int    bpm
+  message: string | null;     // U!string free-form message
 }
 
 type DataCallback = (data: SensorData) => void;
@@ -42,6 +44,8 @@ function parseData(raw: string): SensorData {
     smoke: null,
     humidity: null,
     activity: null,
+    heartbeat: null,
+    message: null,
   };
 
   // Expected format: "l!23.5;E!21.0;B!1;O!98;S!0;H!45;M!5"
@@ -49,17 +53,19 @@ function parseData(raw: string): SensorData {
   for (const part of parts) {
     const [key, value] = part.split('!');
     if (!key || value === undefined) continue;
+    if (key.trim() === 'U') { result.message = value; continue; }
     const num = parseFloat(value);
     if (isNaN(num)) continue;
 
     switch (key.trim()) {
-      case 'l': result.babyTemp = num; break;
-      case 'E': result.roomTemp = num; break;
-      case 'B': result.brightness = num; break;
+      case 'I': result.babyTemp    = num; break;
+      case 'E': result.roomTemp    = num; break;
+      case 'B': result.brightness  = num; break;
       case 'O': result.bloodOxygen = num; break;
-      case 'S': result.smoke = num; break;
-      case 'H': result.humidity = num; break;
-      case 'M': result.activity = num; break;
+      case 'S': result.smoke       = num; break;
+      case 'H': result.humidity    = num; break;
+      case 'M': result.activity    = num; break;
+      case 'C': result.heartbeat   = num; break;
     }
   }
 
