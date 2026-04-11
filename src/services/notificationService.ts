@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import { SensorData } from './bleService';
+import { SensorData } from './wifiService';
 
 const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 const cooldowns: Record<string, number> = {};

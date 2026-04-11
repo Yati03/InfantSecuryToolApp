@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import Aurora from '@/components/Aurora';
-import { cancelConnect, connect, isConnected } from '@/services/bleService';
+import { cancelConnect, connect, isConnected } from '@/services/wifiService';
 
 const AURORA_STOPS = ['#66ffc4', '#ffce1f', '#ff9029'];
 const TIMEOUT_MS = 60_000;

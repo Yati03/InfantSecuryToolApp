@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Aurora from '@/components/Aurora';
-import { SensorData, onData, onDisconnect } from '@/services/bleService';
+import { SensorData, onData, onDisconnect } from '@/services/wifiService';
 import { checkAndNotify, requestNotificationPermissions } from '@/services/notificationService';
 
 const AURORA_STOPS = ['#66ffc4', '#ffce1f', '#ff9029'];
