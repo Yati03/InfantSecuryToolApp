@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import Aurora from '@/components/Aurora';
-import { connect } from '@/services/bleService';
+import { cancelConnect, connect, isConnected } from '@/services/bleService';
 
 const AURORA_STOPS = ['#66ffc4', '#ffce1f', '#ff9029'];
 const TIMEOUT_MS = 60_000;
@@ -88,6 +88,10 @@ export default function ConnectionPage() {
   }, [router]);
 
   useEffect(() => {
+    if (isConnected()) {
+      router.replace('/home');
+      return;
+    }
     startConnection();
     return () => {
       abortRef.current = true;
@@ -96,12 +100,18 @@ export default function ConnectionPage() {
   }, []);
 
   function handleRetry() {
+    if (isConnected()) {
+      router.replace('/home');
+      return;
+    }
+    cancelConnect();
     startConnection();
   }
 
   function handleBack() {
     abortRef.current = true;
     clearTimeout(timerRef.current!);
+    cancelConnect();
     router.back();
   }
 

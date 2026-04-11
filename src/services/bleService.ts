@@ -103,6 +103,17 @@ async function requestPermissions(): Promise<boolean> {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+export function isConnected(): boolean {
+  return connectedDevice !== null;
+}
+
+export function cancelConnect(): void {
+  if (_manager) {
+    try { _manager.stopDeviceScan(); } catch {}
+  }
+  console.log('[BLE] cancelConnect called');
+}
+
 export function onData(cb: DataCallback): () => void {
   dataCallbacks.push(cb);
   return () => { dataCallbacks = dataCallbacks.filter((c) => c !== cb); };
@@ -118,14 +129,19 @@ export async function connect(): Promise<void> {
   // so the dot animation plays until the 60s timeout fires naturally.
   if (Platform.OS === 'web') return new Promise(() => {});
 
+  console.log('[BLE] waiting for powered on...');
   await waitForPoweredOn();
+  console.log('[BLE] powered on');
 
   const granted = await requestPermissions();
+  console.log('[BLE] permissions granted:', granted);
   if (!granted) throw new Error('Bluetooth permissions denied');
 
+  console.log('[BLE] starting scan...');
   return new Promise((resolve, reject) => {
     getManager().startDeviceScan(null, { allowDuplicates: false }, async (error, device) => {
       if (error) {
+        console.log('[BLE] scan error:', error);
         reject(error);
         return;
       }
@@ -138,6 +154,9 @@ export async function connect(): Promise<void> {
       try {
         connectedDevice = await device!.connect();
         await connectedDevice.discoverAllServicesAndCharacteristics();
+        console.log('[BLE connected] Device:', DEVICE_NAME);
+        console.log('[BLE connected] Service UUID:', SERVICE_UUID);
+        console.log('[BLE connected] Char UUID:   ', CHAR_UUID);
 
         connectedDevice.onDisconnected((_err: BleError | null, _dev: Device | null) => {
           charSubscription?.remove();
@@ -151,7 +170,8 @@ export async function connect(): Promise<void> {
           CHAR_UUID,
           (_err, characteristic) => {
             if (characteristic?.value) {
-              const bytes = Buffer.from(characteristic.value, 'base64').toString('utf-8');
+              const bytes = atob(characteristic.value);
+              console.log('[BLE raw]', bytes);
               const parsed = parseData(bytes);
               dataCallbacks.forEach((cb) => cb(parsed));
             }
@@ -167,6 +187,7 @@ export async function connect(): Promise<void> {
 }
 
 export function disconnect(): void {
+  console.log('[BLE] disconnect called');
   charSubscription?.remove();
   charSubscription = null;
   connectedDevice?.cancelConnection();

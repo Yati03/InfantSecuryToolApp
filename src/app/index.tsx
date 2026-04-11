@@ -42,7 +42,7 @@ export default function InitialPage() {
       <Aurora colorStops={AURORA_STOPS} blend={0.59} amplitude={1.0} speed={1.1} />
 
       <View style={styles.content}>
-        <Text style={styles.title}>Infant Security</Text>
+        <Text style={styles.title}>Baby Guard</Text>
 
         <Animated.View
           style={[styles.button, buttonStyle]}

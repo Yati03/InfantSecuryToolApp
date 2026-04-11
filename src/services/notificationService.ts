@@ -42,7 +42,7 @@ export async function requestNotificationPermissions(): Promise<void> {
 }
 
 export function checkAndNotify(data: SensorData): void {
-  const { babyTemp, roomTemp, brightness, smoke, humidity, activity } = data;
+  const { babyTemp, roomTemp, brightness, smoke, humidity, activity, heartbeat, bloodOxygen } = data;
 
   if (babyTemp !== null) {
     if (babyTemp < 36 && !inCooldown('babyTempLow')) {
@@ -77,6 +77,21 @@ export function checkAndNotify(data: SensorData): void {
   if (humidity !== null && humidity > 55 && !inCooldown('humidity')) {
     sendNotification("Humidité est trop haute!");
     setCooldown('humidity');
+  }
+
+  if (heartbeat !== null) {
+    if (heartbeat < 100 && !inCooldown('heartLow')) {
+      sendNotification('Fréquence cardiaque trop basse!');
+      setCooldown('heartLow');
+    } else if (heartbeat > 160 && !inCooldown('heartHigh')) {
+      sendNotification('Fréquence cardiaque trop haute!');
+      setCooldown('heartHigh');
+    }
+  }
+
+  if (bloodOxygen !== null && bloodOxygen < 94 && !inCooldown('spo2Low')) {
+    sendNotification("Niveau d'oxygène dans le sang trop bas!");
+    setCooldown('spo2Low');
   }
 
   if (activity !== null) {

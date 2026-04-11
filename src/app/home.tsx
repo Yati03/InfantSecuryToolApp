@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Aurora from '@/components/Aurora';
-import { SensorData, disconnect, onData, onDisconnect } from '@/services/bleService';
+import { SensorData, onData, onDisconnect } from '@/services/bleService';
 import { checkAndNotify, requestNotificationPermissions } from '@/services/notificationService';
 
 const AURORA_STOPS = ['#66ffc4', '#ffce1f', '#ff9029'];
@@ -32,6 +32,10 @@ function humidityColor(v: number): string {
 
 function activityColor(v: number): string {
   return v < 20 ? '#4ade80' : '#f87171';
+}
+
+function bloodOxygenColor(v: number): string {
+  return v >= 94 ? '#4ade80' : '#f87171';
 }
 
 function heartbeatColor(v: number): string {
@@ -65,12 +69,21 @@ export default function HomePage() {
     message: null,
   });
   const [connectionLost, setConnectionLost] = useState(false);
+  const lastMovementRef = useRef<number>(Date.now());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
     requestNotificationPermissions();
 
+    const timer = setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - lastMovementRef.current) / 1000));
+    }, 1000);
+
     const unsubData = onData((newData) => {
-      setData(newData);
+      if (newData.activity === 1) {
+        lastMovementRef.current = Date.now();
+      }
+      setData(prev => ({ ...prev, ...Object.fromEntries(Object.entries(newData).filter(([, v]) => v !== null)) }));
       checkAndNotify(newData);
     });
 
@@ -79,13 +92,13 @@ export default function HomePage() {
     });
 
     return () => {
+      clearInterval(timer);
       unsubData();
       unsubDisconnect();
     };
   }, []);
 
   function handleBack() {
-    disconnect();
     router.replace('/');
   }
 
@@ -119,17 +132,6 @@ export default function HomePage() {
 
         <View style={styles.card}>
           <SensorRow
-            label="Baby Temperature"
-            value={
-              <Text style={[styles.valueText, { color: babyTemp !== null ? babyTempColor(babyTemp) : '#aaa' }]}>
-                {fmt(babyTemp)} °C
-              </Text>
-            }
-          />
-
-          <View style={styles.divider} />
-
-          <SensorRow
             label="Room Temperature"
             value={
               <Text style={[styles.valueText, { color: roomTemp !== null ? roomTempColor(roomTemp) : '#aaa' }]}>
@@ -141,35 +143,14 @@ export default function HomePage() {
           <View style={styles.divider} />
 
           <SensorRow
-            label="Brightness"
-            value={
-              <Text style={[styles.valueText, { color: brightness !== null ? brightnessColor(brightness) : '#aaa' }]}>
-                {brightness !== null ? (brightness === 1 ? 'ON' : 'OFF') : '—'}
-              </Text>
-            }
-          />
-
-          <View style={styles.divider} />
-
-          <SensorRow
             label="Blood Oxygen Level"
             value={
-              <Text style={[styles.valueText, { color: '#ffffff' }]}>
-                {bloodOxygen !== null ? `${Math.round(bloodOxygen)} bpm` : '—'}
+              <Text style={[styles.valueText, { color: bloodOxygen !== null ? bloodOxygenColor(bloodOxygen) : '#aaa' }]}>
+                {bloodOxygen !== null ? `${Math.round(bloodOxygen)} %` : '—'}
               </Text>
             }
           />
 
-          <View style={styles.divider} />
-
-          <SensorRow
-            label="Smoke Levels"
-            value={
-              <Text style={[styles.valueText, { color: smoke !== null ? smokeColor(smoke) : '#aaa' }]}>
-                {smoke !== null ? (smoke === 1 ? 'Smoke Detected' : 'No Smoke Detected') : '—'}
-              </Text>
-            }
-          />
 
           <View style={styles.divider} />
 
@@ -187,8 +168,8 @@ export default function HomePage() {
           <SensorRow
             label="Activity"
             value={
-              <Text style={[styles.valueText, { color: activity !== null ? activityColor(activity) : '#aaa' }]}>
-                {activity !== null ? `${Math.round(activity)} m without movements` : '—'}
+              <Text style={[styles.valueText, { color: activityColor(Math.floor(elapsedSeconds / 60)) }]}>
+                {`${Math.floor(elapsedSeconds / 60)} m without movement`}
               </Text>
             }
           />
