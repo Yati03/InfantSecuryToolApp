@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import Aurora from '@/components/Aurora';
@@ -69,20 +69,11 @@ export default function HomePage() {
     message: null,
   });
   const [connectionLost, setConnectionLost] = useState(false);
-  const lastMovementRef = useRef<number>(Date.now());
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   useEffect(() => {
     requestNotificationPermissions();
 
-    const timer = setInterval(() => {
-      setElapsedSeconds(Math.floor((Date.now() - lastMovementRef.current) / 1000));
-    }, 1000);
-
     const unsubData = onData((newData) => {
-      if (newData.activity === 1) {
-        lastMovementRef.current = Date.now();
-      }
       setData(prev => ({ ...prev, ...Object.fromEntries(Object.entries(newData).filter(([, v]) => v !== null)) }));
       checkAndNotify(newData);
     });
@@ -92,7 +83,6 @@ export default function HomePage() {
     });
 
     return () => {
-      clearInterval(timer);
       unsubData();
       unsubDisconnect();
     };
@@ -168,8 +158,8 @@ export default function HomePage() {
           <SensorRow
             label="Activity"
             value={
-              <Text style={[styles.valueText, { color: activityColor(Math.floor(elapsedSeconds / 60)) }]}>
-                {`${Math.floor(elapsedSeconds / 60)} m without movement`}
+              <Text style={[styles.valueText, { color: activity !== null ? activityColor(activity) : '#aaa' }]}>
+                {activity !== null ? `${activity} m without movement` : '—'}
               </Text>
             }
           />

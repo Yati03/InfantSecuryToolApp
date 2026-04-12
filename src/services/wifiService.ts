@@ -1,5 +1,5 @@
 // ── PLACEHOLDER — replace with the IP printed by the ESP32 on Serial ─────────
-const ESP32_HOST = 'http://192.168.X.X';   // <-- replace after flashing
+const ESP32_HOST = 'http://172.20.10.11';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const POLL_INTERVAL_MS = 1000;
